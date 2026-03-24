@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+
+# Temp files
+temp_*.png
+test_*.py
+test_*.png
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JSON data (user specific)
+config.json
+friends.json
+*.json
