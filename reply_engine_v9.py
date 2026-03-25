@@ -234,6 +234,12 @@ class ReplyEngineV9:
             return "meal"
         if message in ["睡了吗", "睡觉没"]:
             return "night"
+        # 「不想上班」→ complaint 而不是 work
+        if message in ["不想上班", "不想工作"]:
+            return "complaint"
+        # 「早点睡」「注意身体」→ care 而不是 night
+        if message in ["早点睡觉", "早点睡", "注意身体", "保重身体"]:
+            return "care"
         
         # 计算每个意图的匹配度
         intent_scores: Dict[str, int] = {}
