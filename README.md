@@ -37,27 +37,47 @@
 
 ## 🚀 快速开始
 
-### 使用撩妹助手
+### 方式一：GUI 界面 (推荐)
+
+**Mac/Linux:**
 ```bash
-python3 dating_assistant_v13.py
+cd /Users/zhengmi/111
+./start.sh
 ```
 
-### 集成到聊天程序
-```python
-from dating_assistant_v13 import DatingAssistant
+**Windows:**
+```
+双击 启动 V23.bat
+```
 
-assistant = DatingAssistant()
+**GUI 界面功能:**
+- 👧 女生管理 (多女生切换)
+- 💬 聊天对话 (智能回复生成)
+- 🛠️ 快捷工具 (开场白/调情短信/兴趣度分析)
+- 📊 状态显示 (技巧库统计/会话信息)
+
+### 方式二：命令行测试
+
+```bash
+python3 demo_experience.py
+```
+
+### 方式三：Python 集成
+
+```python
+from pickup_master_v23_ultimate import PickupMasterV23
+
+master = PickupMasterV23()
+
+# 开始会话
+session_id = master.start_session("user_001")
 
 # 获取开场白
-opener = assistant.get_random_opener()
-print(opener['text'])  # 在干嘛呢小可爱~
+opener = master.get_opening_line("好奇类")
 
-# 获取约会建议
-date_advice = assistant.get_date_advice("第一次约会")
-
-# 分析兴趣度
-analysis = assistant.analyze_girl_interest(chat_history)
-print(f"兴趣度：{analysis.score}/100")
+# 聊天
+result = master.chat("在干嘛呢", girl_name="小美")
+print(result['reply'])
 ```
 
 ## 📁 项目结构
