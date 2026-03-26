@@ -16,17 +16,7 @@ fi
 echo "✅ Python 版本：$(python3 --version)"
 echo ""
 
-# 检查依赖
-echo "📦 检查依赖..."
-python3 -c "import tkinter" 2>/dev/null
-if [ $? -ne 0 ]; then
-    echo "⚠️  警告：tkinter 未安装"
-    echo "Mac: brew install python-tk"
-    echo "Ubuntu: sudo apt-get install python3-tk"
-    echo ""
-fi
-
-# 启动 GUI
-echo "🚀 启动 GUI 界面..."
+# 启动命令行交互版
+echo "🚀 启动命令行交互版..."
 echo ""
-python3 main_gui.py
+python3 main_cli.py

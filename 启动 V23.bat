@@ -18,10 +18,10 @@ echo ✅ Python 版本:
 python --version
 echo.
 
-REM 启动 GUI
-echo 🚀 启动 GUI 界面...
+REM 启动命令行交互版
+echo 🚀 启动命令行交互版...
 echo.
-python main_gui.py
+python main_cli.py
 
 if %errorlevel% neq 0 (
     echo.
