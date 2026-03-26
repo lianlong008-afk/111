@@ -18,10 +18,10 @@ echo ✅ Python 版本:
 python --version
 echo.
 
-REM 启动命令行交互版
-echo 🚀 启动命令行交互版...
+REM 启动智能启动器
+echo 🚀 启动程序...
 echo.
-python main_cli.py
+python start_smart.py
 
 if %errorlevel% neq 0 (
     echo.

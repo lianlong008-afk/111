@@ -16,7 +16,7 @@ fi
 echo "✅ Python 版本：$(python3 --version)"
 echo ""
 
-# 启动命令行交互版
-echo "🚀 启动命令行交互版..."
+# 启动智能启动器
+echo "🚀 启动程序..."
 echo ""
-python3 main_cli.py
+python3 start_smart.py
