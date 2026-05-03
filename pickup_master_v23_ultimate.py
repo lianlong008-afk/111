@@ -117,12 +117,22 @@ class VikingFileSystem:
     def _load_nodes(self) -> None:
         index_file = os.path.join(self.storage_path, "index.json")
         if os.path.exists(index_file):
-            with open(index_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                for node_data in data.get("nodes", []):
+            try:
+                with open(index_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except (OSError, json.JSONDecodeError):
+                return
+
+            for node_data in data.get("nodes", []):
+                try:
                     node = VikingNode(**node_data)
-                    self.nodes[node.id] = node
-                    self.uri_index[node.uri] = node.id
+                except TypeError:
+                    continue
+                if node.uri in self.uri_index:
+                    old_node_id = self.uri_index[node.uri]
+                    self.nodes.pop(old_node_id, None)
+                self.nodes[node.id] = node
+                self.uri_index[node.uri] = node.id
     
     def _save_index(self) -> None:
         index_file = os.path.join(self.storage_path, "index.json")
@@ -133,21 +143,33 @@ class VikingFileSystem:
         with open(index_file, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
     
-    def _generate_id(self, content: str) -> str:
-        return hashlib.md5(f"{content}{datetime.now().isoformat()}".encode()).hexdigest()[:12]
+    def _generate_id(self, content: str, deterministic: bool = False) -> str:
+        seed = content if deterministic else f"{content}{datetime.now().isoformat()}"
+        return hashlib.md5(seed.encode()).hexdigest()[:12]
     
-    def _generate_uri(self, path: str) -> str:
-        return f"viking://{path}"
+    def _generate_uri(self, path: str, name: str = "") -> str:
+        clean_path = path.strip("/")
+        clean_name = (name or "").strip("/")
+        if clean_name:
+            return f"viking://{clean_path}/{clean_name}"
+        return f"viking://{clean_path}"
     
     def add_node(self, name: str, content: Any, path: str, 
                  node_type: str = "file", level: str = "L1",
-                 tags: List[str] = None, metadata: Dict = None) -> VikingNode:
-        node_id = self._generate_id(f"{path}{name}")
-        uri = self._generate_uri(path)
+                 tags: List[str] = None, metadata: Dict = None,
+                 dedupe: bool = True) -> VikingNode:
+        uri = self._generate_uri(path, name)
+        existing_id = self.uri_index.get(uri) if dedupe else None
+        existing = self.nodes.get(existing_id) if existing_id else None
+        now = datetime.now().isoformat()
+        node_id = existing.id if existing else self._generate_id(uri, deterministic=dedupe)
         
         node = VikingNode(
             id=node_id, name=name, type=node_type, uri=uri, level=level,
             content=content, metadata=metadata or {}, tags=tags or [],
+            created_at=existing.created_at if existing else now,
+            updated_at=now,
+            access_count=existing.access_count if existing else 0,
         )
         
         self.nodes[node_id] = node
@@ -199,7 +221,7 @@ class VikingFileSystem:
         uri = self._generate_uri(path)
         results = []
         for node in self.nodes.values():
-            if node.uri.startswith(uri + "/") or (node.uri.startswith(uri) and node.uri != uri):
+            if node.uri.startswith(uri + "/"):
                 results.append(node)
         return sorted(results, key=lambda x: (x.type != "directory", x.name))
 
@@ -233,8 +255,9 @@ class VikingContextManager:
     
     def add_to_memory(self, content: Dict, tags: List[str] = None) -> VikingNode:
         node = self.fs.add_node(
-            name=f"memory_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            name=f"memory_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}",
             content=content, path="memory", tags=tags or [], metadata={"type": "memory"},
+            dedupe=False,
         )
         if self.current_session:
             self.current_session.memory_nodes.append(node.id)
