@@ -76,6 +76,7 @@ def build_checks() -> List[tuple[str, List[str]]]:
     return [
         ("Python compileall", [sys.executable, "-m", "compileall", "-q", "."]),
         ("Viking filesystem regression", [sys.executable, "tests/viking_filesystem_regression.py"]),
+        ("V24 reply engine regression", [sys.executable, "tests/v24_reply_engine_regression.py"]),
         ("V24 offline smoke", [sys.executable, "-c", offline_smoke]),
     ]
 
@@ -182,6 +183,8 @@ def main() -> int:
         "Make Viking static resource initialization idempotent to stop index.json growth.",
         "Use resource-level URIs so directory listing and direct node lookup are reliable.",
         "Keep memory writes append-only while preventing same-second URI collisions.",
+        "Return usable local replies when V24 has no API key or the API request fails.",
+        "Clean numbered or quoted API output before showing reply options.",
     ]
 
     results = [run_command(name, command) for name, command in build_checks()]

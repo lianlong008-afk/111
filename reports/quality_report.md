@@ -1,6 +1,6 @@
 # Quality Gate Report
 
-- Generated at: 2026-05-03T09:58:26
+- Generated at: 2026-05-03T10:01:50
 - Branch: `optimize-v8.2`
 - Overall: `PASS`
 
@@ -9,6 +9,8 @@
 - Make Viking static resource initialization idempotent to stop index.json growth.
 - Use resource-level URIs so directory listing and direct node lookup are reliable.
 - Keep memory writes append-only while preventing same-second URI collisions.
+- Return usable local replies when V24 has no API key or the API request fails.
+- Clean numbered or quoted API output before showing reply options.
 
 ## Check Summary
 
@@ -16,6 +18,7 @@
 |---|---:|---:|
 | Python compileall | `PASS` | `0` |
 | Viking filesystem regression | `PASS` | `0` |
+| V24 reply engine regression | `PASS` | `0` |
 | V24 offline smoke | `PASS` | `0` |
 
 ## Git Snapshot
@@ -23,13 +26,20 @@
 ### Changed Files
 
 ```text
-clean
+M pickup_master_v24.py
+ M reports/quality_report.md
+ A tests/v24_reply_engine_regression.py
+ M tools/quality_gate.py
 ```
 
 ### Diff Stat
 
 ```text
-clean
+pickup_master_v24.py                 | 77 ++++++++++++++++++++++++++++++------
+ reports/quality_report.md            | 30 ++++++++++++--
+ tests/v24_reply_engine_regression.py | 61 ++++++++++++++++++++++++++++
+ tools/quality_gate.py                |  3 ++
+ 4 files changed, 155 insertions(+), 16 deletions(-)
 ```
 
 ## Check Details
@@ -55,6 +65,23 @@ stderr:
 
 - Status: `PASS`
 - Command: `/Library/Developer/CommandLineTools/usr/bin/python3 tests/viking_filesystem_regression.py`
+
+stdout:
+
+```text
+(empty)
+```
+
+stderr:
+
+```text
+(empty)
+```
+
+### V24 reply engine regression
+
+- Status: `PASS`
+- Command: `/Library/Developer/CommandLineTools/usr/bin/python3 tests/v24_reply_engine_regression.py`
 
 stdout:
 

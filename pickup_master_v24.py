@@ -7,7 +7,7 @@
 import os
 import json
 import hashlib
-import random
+import re
 from datetime import datetime
 from typing import List, Dict, Optional, Any, Tuple
 
@@ -145,20 +145,76 @@ class VikingContextManager:
 
 class MiniMaxAPI:
     """MiniMax API 调用"""
+
+    FALLBACK_REPLIES = ["我在呢，你说", "刚看到消息啦", "怎么突然找我呀"]
+    MIN_REPLY_LEN = 2
+    MAX_REPLY_LEN = 30
     
     def __init__(self, api_key: str, model: str = "MiniMax-M2.7"):
         self.api_key = api_key
         self.model = model
         self.base_url = "https://api.minimax.chat/v1/text/chatcompletion_v2"
+
+    @classmethod
+    def _fallback_replies(cls) -> List[str]:
+        return cls.FALLBACK_REPLIES.copy()
+
+    @classmethod
+    def _clean_reply(cls, line: str) -> str:
+        """清理模型常见的编号、列表符号和包裹引号。"""
+        line = line.strip()
+        line = re.sub(r'^[\s\d一二三四五六七八九十]+[.、:：)\]】-]+\s*', '', line)
+        line = re.sub(r'^[①②③④⑤⑥⑦⑧⑨⑩]\s*', '', line)
+        line = re.sub(r'^[-*•·]\s*', '', line)
+        line = line.strip(' "\'“”‘’「」『』')
+        return line.strip()
+
+    @classmethod
+    def _parse_replies(cls, content: str) -> List[str]:
+        """把 API 原始文本解析成 3 条可直接展示的微信回复。"""
+        if not content:
+            return cls._fallback_replies()
+
+        candidates: List[str] = []
+        for raw_line in content.splitlines():
+            line = cls._clean_reply(raw_line)
+            if line:
+                candidates.append(line)
+
+        if len(candidates) < 3:
+            for part in re.split(r'[。；;!?！？]\s*', content):
+                line = cls._clean_reply(part)
+                if line:
+                    candidates.append(line)
+
+        replies: List[str] = []
+        seen = set()
+        for line in candidates:
+            if not (cls.MIN_REPLY_LEN <= len(line) <= cls.MAX_REPLY_LEN):
+                continue
+            if line in seen:
+                continue
+            seen.add(line)
+            replies.append(line)
+            if len(replies) == 3:
+                break
+
+        for fallback in cls._fallback_replies():
+            if len(replies) == 3:
+                break
+            if fallback not in seen:
+                replies.append(fallback)
+
+        return replies[:3]
     
     def generate_reply(self, prompt: str, system_prompt: str = None) -> Tuple[List[str], str]:
         """生成回复"""
-        import requests
-        
         if not self.api_key:
-            return ["API Key 未配置，请在设置中配置", "请先配置 API Key", "缺少 API Key"], "无 API Key"
+            return self._fallback_replies(), "本地兜底：无 API Key"
         
         try:
+            import requests
+
             headers = {
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {self.api_key}"
@@ -183,21 +239,16 @@ class MiniMaxAPI:
             result = resp.json()
             content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
             
-            # 解析回复 (按行分割)
-            replies = [line.strip() for line in content.strip().split("\n") if line.strip()]
-            
-            # 确保至少 3 条
-            while len(replies) < 3:
-                replies.append("(请重试)")
+            replies = self._parse_replies(content)
             
             return replies[:3], f"API 返回{len(replies)}条"
             
         except requests.exceptions.Timeout:
-            return ["请求超时，请重试", "网络超时", "请稍后再试"], "请求超时"
+            return self._fallback_replies(), "本地兜底：请求超时"
         except requests.exceptions.RequestException as e:
-            return [f"API 错误：{str(e)}", "网络错误", "请检查网络"], f"请求失败：{e}"
+            return self._fallback_replies(), f"本地兜底：请求失败：{e}"
         except Exception as e:
-            return [f"错误：{str(e)}", "未知错误", "请重试"], f"异常：{e}"
+            return self._fallback_replies(), f"本地兜底：异常：{e}"
 
 
 # ==================== Prompt 构建 ====================
